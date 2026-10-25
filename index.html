@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>인문 신호등</title>
+<meta name="description" content="인문과학대학 학생회 민원 트래커. 민원을 남기고, 지금 어디까지 처리됐는지 누구나 확인하세요.">
+<meta property="og:title" content="인문 신호등">
+<meta property="og:description" content="인문과학대학 학생회 민원 트래커 · 내 민원이 지금 어디까지 왔는지 확인하세요">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#23336b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='9' y='1' width='14' height='30' rx='6' fill='%231b2238'/%3E%3Ccircle cx='16' cy='8' r='4' fill='%23e8574c'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23f0b13d'/%3E%3Ccircle cx='16' cy='24' r='4' fill='%2347b87a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<script src="config.js"></script>
+<style>
+/* Layout: a civic notice board. Header + three pledges, live counters, then the complaint list beside the intake form. */
+:root {
+  --bg: #f4f6f9; --surface: #ffffff; --ink: #18213a; --ink-2: #4a5470; --ink-3: #7c859c;
+  --line: #dde2ec; --accent: #23336b; --accent-soft: #e5e9f5; --on-accent: #ffffff;
+  --red: #d6453b; --red-soft: #fbe7e5; --amber: #b87a0a; --amber-soft: #fbf0d9;
+  --green: #2f8f56; --green-soft: #e0f2e7; --grey: #7f8596; --grey-soft: #eceef2;
+  --housing: #1b2238;
+  --f-display: "Hahmlet", "Nanum Myeongjo", "Noto Serif KR", serif;
+  --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #10141e; --surface: #181e2b; --ink: #e8ebf3; --ink-2: #b2b9cc; --ink-3: #828aa0;
+    --line: #2a3243; --accent: #9fb0ec; --accent-soft: #232c45; --on-accent: #10141e;
+    --red: #f06a5f; --red-soft: #3a1f22; --amber: #f0b13d; --amber-soft: #382c16;
+    --green: #4fc283; --green-soft: #183224; --grey: #9aa1b2; --grey-soft: #262c39;
+    --housing: #0a0d14; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(28px + env(safe-area-inset-top, 0px)) calc(56px + env(safe-area-inset-bottom, 0px));
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+[hidden] { display: none !important; }
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.top { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; justify-content: space-between; }
+.brand { display: flex; gap: 16px; align-items: center; min-width: 0; }
+.lamp { background: var(--housing); border-radius: 14px; padding: 9px 7px; display: flex; flex-direction: column; gap: 6px; flex: none; }
+.lamp i { display: block; width: 14px; height: 14px; border-radius: 50%; }
+.lamp i:nth-child(1) { background: #e8574c; } .lamp i:nth-child(2) { background: #f0b13d; } .lamp i:nth-child(3) { background: #47b87a; }
+.brand h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(30px, 5vw, 42px); line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.brand p { margin: 4px 0 0; color: var(--ink-2); font-size: 14px; }
+.cta { display: inline-flex; align-items: center; text-decoration: none; background: var(--accent); color: var(--on-accent); font-weight: 600; padding: 10px 18px; border-radius: 999px; }
+.cta:hover { filter: brightness(1.08); }
+
+.pledges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); }
+.pledge { padding: 16px 18px; display: flex; gap: 14px; align-items: baseline; min-width: 0; }
+.pledge + .pledge { border-left: 1px solid var(--line); }
+.pledge b { font-family: var(--f-display); font-size: 28px; font-weight: 800; color: var(--accent); line-height: 1; flex: none; }
+.pledge span { color: var(--ink-2); font-size: 14px; }
+@media (max-width: 720px) { .pledges { grid-template-columns: 1fr; } .pledge + .pledge { border-left: 0; border-top: 1px solid var(--line); } }
+
+.stats { display: flex; flex-wrap: wrap; gap: 10px 32px; }
+.stat { display: flex; flex-direction: column; }
+.stat .n { font-family: var(--f-mono); font-weight: 600; font-size: 26px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.stat .l { font-size: 12px; color: var(--ink-3); letter-spacing: .04em; }
+.stat.red .n { color: var(--red); } .stat.amber .n { color: var(--amber); } .stat.green .n { color: var(--green); }
+.notice { background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--ink-2); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.selects { display: flex; gap: 8px; }
+select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+
+.list { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.empty { padding: 40px 12px; text-align: center; color: var(--ink-3); }
+.item { border-bottom: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 16px 4px; cursor: pointer; width: 100%; background: none; border: 0; text-align: left; }
+.row:hover { background: var(--accent-soft); }
+.dot { width: 14px; height: 14px; border-radius: 50%; margin-top: 5px; }
+.dot.red { background: var(--red); box-shadow: 0 0 0 4px var(--red-soft); }
+.dot.amber { background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft); }
+.dot.green { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+.dot.grey { background: var(--grey); box-shadow: 0 0 0 4px var(--grey-soft); }
+.row h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.45; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12.5px; color: var(--ink-3); margin-top: 4px; align-items: center; }
+.pill { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.pill.red { background: var(--red-soft); color: var(--red); } .pill.amber { background: var(--amber-soft); color: var(--amber); }
+.pill.green { background: var(--green-soft); color: var(--green); } .pill.grey { background: var(--grey-soft); color: var(--grey); }
+.tag { border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; font-size: 11.5px; color: var(--ink-2); }
+.tag.sample { border-style: dashed; }
+.late { color: var(--red); font-weight: 600; }
+.like-n { font-family: var(--f-mono); font-size: 13px; color: var(--ink-2); padding-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.like-n.hot { color: var(--red); }
+
+.detail { padding: 0 4px 22px 36px; display: flex; flex-direction: column; gap: 16px; }
+.detail .body { white-space: pre-wrap; color: var(--ink-2); max-width: 65ch; margin: 0; }
+.track { display: flex; overflow-x: auto; padding-bottom: 2px; }
+.step { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 70px; flex: 1; position: relative; font-size: 11.5px; color: var(--ink-3); text-align: center; }
+.step::before { content: ""; position: absolute; top: 6px; left: -50%; width: 100%; height: 2px; background: var(--line); }
+.step:first-child::before { display: none; }
+.step .b { width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); position: relative; z-index: 1; }
+.step.on { color: var(--ink); font-weight: 600; } .step.on .b { background: var(--accent); border-color: var(--accent); } .step.on::before { background: var(--accent); }
+.step .d { font-family: var(--f-mono); font-size: 10.5px; font-weight: 500; color: var(--ink-3); }
+.reply { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.reply .who { font-size: 12px; color: var(--ink-3); margin-bottom: 4px; }
+.reply p { margin: 0; white-space: pre-wrap; }
+.reply.muted p { color: var(--ink-3); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 14px; font-size: 13.5px; cursor: pointer; }
+.btn:hover { border-color: var(--ink-3); }
+.btn.liked { border-color: var(--red); color: var(--red); background: var(--red-soft); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.goal { font-size: 12.5px; color: var(--ink-3); }
+@media (max-width: 480px) { .detail { padding-left: 4px; } }
+
+aside { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); }
+@media (max-width: 900px) { aside { position: static; } }
+.form { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.form h2 { font-family: var(--f-display); font-size: 22px; margin: 0; font-weight: 700; }
+.form .sub { margin: -8px 0 0; font-size: 13px; color: var(--ink-3); }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.field input[type=text], .field textarea, .field select { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 9px 11px; font-size: 16px; }
+.field textarea { min-height: 120px; resize: vertical; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13.5px; color: var(--ink-2); }
+.hint { font-size: 12px; color: var(--ink-3); margin: 0; }
+.err { font-size: 13px; color: var(--red); margin: 0; }
+footer { color: var(--ink-3); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 16px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.18); z-index: 20; max-width: calc(100% - 32px); }
+@media (prefers-reduced-motion: no-preference) {
+  .detail { animation: open .18s ease-out; }
+  @keyframes open { from { opacity: .4; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="lamp" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div>
+        <h1>인문 신호등</h1>
+        <p>인문과학대학 학생회 민원 트래커 · 내 민원이 지금 어디까지 왔는지 누구나 확인할 수 있어요</p>
+      </div>
+    </div>
+    <a class="cta" href="#new">민원 접수하기</a>
+  </header>
+
+  <section class="pledges" aria-label="처리 원칙">
+    <div class="pledge"><b id="p1">3일</b><span>접수 후 이 기간 안에 담당자가 1차 답변을 남깁니다</span></div>
+    <div class="pledge"><b id="p2">2주</b><span>이 기간 안에 처리 결과 또는 진행 상황을 공개합니다</span></div>
+    <div class="pledge"><b id="p3">공감 30</b><span>공감이 이만큼 모인 민원은 학장 간담회 안건으로 올립니다</span></div>
+  </section>
+
+  <section class="stats" aria-label="처리 현황">
+    <div class="stat"><span class="n" id="s-total">–</span><span class="l">전체 민원</span></div>
+    <div class="stat red"><span class="n" id="s-wait">–</span><span class="l">답변 대기</span></div>
+    <div class="stat amber"><span class="n" id="s-prog">–</span><span class="l">처리 중</span></div>
+    <div class="stat green"><span class="n" id="s-done">–</span><span class="l">완료</span></div>
+    <div class="stat"><span class="n" id="s-rate">–</span><span class="l">완료율</span></div>
+    <div class="stat"><span class="n" id="s-avg">–</span><span class="l">평균 1차 응답</span></div>
+  </section>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <div class="main">
+    <section aria-label="민원 목록" id="board">
+      <div class="toolbar">
+        <div class="chips" id="filters" role="group" aria-label="상태 필터"></div>
+        <div class="selects">
+          <select id="f-cat" aria-label="분류"></select>
+          <select id="f-sort" aria-label="정렬"><option value="new">최신순</option><option value="likes">공감순</option></select>
+        </div>
+      </div>
+      <div class="list" id="list"><div class="empty">민원 목록을 불러오는 중이에요.</div></div>
+    </section>
+
+    <aside id="new">
+      <form class="form" id="form" novalidate>
+        <h2>민원 접수</h2>
+        <p class="sub">로그인 없이 익명으로 접수돼요. 불편한 점, 바라는 점 무엇이든 좋아요.</p>
+        <div class="field"><label for="in-cat">분류</label><select id="in-cat"></select></div>
+        <div class="field"><label for="in-title">제목</label><input type="text" id="in-title" maxlength="60" placeholder="예: 열람실 콘센트 고장"></div>
+        <div class="field"><label for="in-body">내용</label><textarea id="in-body" maxlength="1500" placeholder="언제, 어디서, 무엇이 불편한지 적어주세요."></textarea></div>
+        <div class="hp" aria-hidden="true"><label for="in-web">웹사이트</label><input type="text" id="in-web" tabindex="-1" autocomplete="off"></div>
+        <label class="check"><input type="checkbox" id="in-private"> 목록에 공개하지 않기 (학생회만 열람)</label>
+        <p class="err" id="form-err" hidden></p>
+        <button class="btn primary" type="submit" id="in-submit">접수하기</button>
+        <p class="hint">접수하면 목록에 빨간불(접수)로 올라가고, 담당 국이 배정되면 신호가 바뀝니다. 개인정보는 적지 말아주세요.</p>
+      </form>
+    </aside>
+  </div>
+
+  <footer>인문과학대학 학생회 · 목록은 1분마다 자동으로 새로고침됩니다 · <span id="updated"></span></footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  const CFG = Object.assign({ scriptUrl: "", firstReplyDays: 3, resultDays: 14, likeGoal: 30 }, window.INMUN_CONFIG || {});
+  const API = (CFG.scriptUrl || "").trim();
+  const DEMO = !API;
+
+  const STAGES = {
+    received:  { label: "접수",      light: "red" },
+    assigned:  { label: "담당 배정", light: "amber" },
+    review:    { label: "검토 중",   light: "amber" },
+    forwarded: { label: "학교 전달", light: "amber" },
+    done:      { label: "완료",      light: "green" },
+    rejected:  { label: "처리 불가", light: "grey" },
+  };
+  const TRACK = ["received", "assigned", "review", "forwarded", "done"];
+  const CATS = ["시설", "학사·수업", "복지", "학생회 운영", "기타"];
+  const DAY = 86400000;
+
+  const S = { items: [], filter: "all", cat: "all", sort: "new", open: null, loaded: false, busy: new Set() };
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fmtDate = iso => { const d = new Date(iso); return isNaN(d) ? "" : (d.getMonth() + 1) + "." + d.getDate(); };
+  const daysSince = iso => Math.floor((Date.now() - new Date(iso).getTime()) / DAY);
+
+  /* 공감 기록은 이 브라우저에만 저장됩니다 (중복 공감 방지용) */
+  const LIKE_KEY = "inmun-signal-likes";
+  function myLikes() { try { return new Set(JSON.parse(localStorage.getItem(LIKE_KEY) || "[]")); } catch (e) { return new Set(); } }
+  function saveLikes(set) { try { localStorage.setItem(LIKE_KEY, JSON.stringify([...set])); } catch (e) {} }
+
+  let toastT;
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 2600); }
+  function notice(msg) { $("notice").textContent = msg || ""; $("notice").hidden = !msg; }
+
+  $("p1").textContent = CFG.firstReplyDays + "일";
+  $("p2").textContent = CFG.resultDays % 7 === 0 ? (CFG.resultDays / 7) + "주" : CFG.resultDays + "일";
+  $("p3").textContent = "공감 " + CFG.likeGoal;
+
+  /* ---------- 예시 데이터 (스크립트 주소를 넣기 전 미리보기용) ---------- */
+  function demoItems() {
+    const ago = (d, h) => new Date(Date.now() - d * DAY - (h || 0) * 3600000).toISOString();
+    return [
+      { id: "ex1", sample: true, category: "시설", title: "4층 여자화장실 핸드드라이어 고장", body: "4층 여자화장실 핸드드라이어가 일주일째 작동하지 않아요. 휴지도 자주 떨어져서 손 닦기가 불편합니다.", stage: "done", dept: "복지국", reply: "단과대 행정팀을 통해 시설팀에 수리를 요청했고 교체가 완료되었습니다. 휴지 비치 주기도 주 2회에서 3회로 늘렸어요.", likes: 12, createdAt: ago(20), history: [{ stage: "received", at: ago(20) }, { stage: "assigned", at: ago(19) }, { stage: "forwarded", at: ago(18) }, { stage: "done", at: ago(12) }] },
+      { id: "ex2", sample: true, category: "학사·수업", title: "시험기간 열람실 야간 개방 연장 요청", body: "중간고사 기간에 열람실이 밤 11시에 닫아서 자리를 옮겨야 했어요. 기말고사 기간만이라도 새벽 2시까지 열어주셨으면 합니다.", stage: "forwarded", dept: "회장단", reply: "공감 30개를 넘겨 다음 학장 간담회 안건으로 올렸습니다. 경비 인력 배치 문제로 학교 측 검토가 필요하다는 1차 답변을 받았고, 결과를 이곳에 업데이트하겠습니다.", likes: 41, createdAt: ago(14), history: [{ stage: "received", at: ago(14) }, { stage: "assigned", at: ago(13) }, { stage: "review", at: ago(11) }, { stage: "forwarded", at: ago(6) }] },
+      { id: "ex3", sample: true, category: "학사·수업", title: "전공필수 과목 수강 정원 부족", body: "전공필수 과목 정원이 부족해서 이번 학기 수강신청에 실패한 학우가 많습니다. 다음 학기 분반 증설을 학과에 건의해주세요.", stage: "review", dept: "기획국", reply: "학과별 수강신청 실패 사례를 설문으로 모으고 있습니다. 결과를 정리해 학과장 면담 자료로 쓰겠습니다.", likes: 23, createdAt: ago(9), history: [{ stage: "received", at: ago(9) }, { stage: "assigned", at: ago(8) }, { stage: "review", at: ago(6) }] },
+      { id: "ex4", sample: true, category: "시설", title: "과방 와이파이가 자주 끊겨요", body: "과방에서 오후만 되면 와이파이가 끊깁니다. 공유기 상태 확인 부탁드려요.", stage: "assigned", dept: "사무국", reply: "사무국에서 이번 주 안에 과방 공유기를 점검하겠습니다.", likes: 7, createdAt: ago(4), history: [{ stage: "received", at: ago(4) }, { stage: "assigned", at: ago(3) }] },
+      { id: "ex5", sample: true, category: "복지", title: "인문대 전용 셔틀버스 운행 요청", body: "건물이 역에서 멀어서 아침 수업 때 너무 힘들어요. 단과대 셔틀을 운행해주세요.", stage: "rejected", dept: "대외협력국", reply: "셔틀버스는 학교 차원에서 운영되어 단과대 단위로 별도 운행하기는 어렵습니다. 대신 기존 셔틀 노선에 인문대 앞 정류장을 추가해달라는 건의를 총학생회에 전달했습니다.", likes: 18, createdAt: ago(17), history: [{ stage: "received", at: ago(17) }, { stage: "assigned", at: ago(16) }, { stage: "rejected", at: ago(10) }] },
+      { id: "ex6", sample: true, category: "시설", title: "엘리베이터 쉬는시간 대기 너무 길어요", body: "쉬는시간마다 엘리베이터 대기 줄이 길어서 다음 수업에 늦습니다. 저층 이용 자제 안내문이라도 붙여주시면 좋겠어요.", stage: "received", dept: "", reply: "", likes: 9, createdAt: ago(1, 5), history: [{ stage: "received", at: ago(1, 5) }] },
+    ];
+  }
+
+  /* ---------- 서버 통신 ---------- */
+  async function api(payload) {
+    const res = await fetch(API, { method: "POST", body: JSON.stringify(payload) }); // text/plain → 사전요청 없이 전송
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "요청을 처리하지 못했어요.");
+    return data;
+  }
+  async function load(quiet) {
+    if (DEMO) {
+      S.items = demoItems(); S.loaded = true; render();
+      notice("미리보기 모드예요. 지금 보이는 민원은 '예시'이고, 접수해도 저장되지 않아요. config.js에 스크립트 주소를 넣으면 실제로 동작합니다.");
+      return;
+    }
+    try {
+      const res = await fetch(API + (API.includes("?") ? "&" : "?") + "t=" + Date.now());
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      S.items = data.items || []; S.loaded = true; notice("");
+      $("updated").textContent = "마지막 갱신 " + new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+      render();
+    } catch (e) {
+      if (!quiet || !S.loaded) { S.loaded = true; render(); notice("목록을 불러오지 못했어요. 잠시 뒤 새로고침해주세요."); }
+    }
+  }
+
+  /* ---------- 화면 ---------- */
+  function firstResponseAt(c) { const e = (c.history || []).find(x => x.stage !== "received"); return e ? e.at : null; }
+
+  function buildControls() {
+    const fs = [["all", "전체"], ["wait", "답변 대기"], ["prog", "처리 중"], ["done", "완료"], ["rejected", "처리 불가"]];
+    $("filters").innerHTML = fs.map(([k, l]) => '<button type="button" class="chip" data-f="' + k + '" aria-pressed="' + (S.filter === k) + '">' + l + "</button>").join("");
+  }
+  $("filters").addEventListener("click", e => { const b = e.target.closest("[data-f]"); if (!b) return; S.filter = b.dataset.f; buildControls(); render(); });
+  $("f-cat").innerHTML = '<option value="all">전체 분류</option>' + CATS.map(c => "<option>" + c + "</option>").join("");
+  $("in-cat").innerHTML = CATS.map(c => "<option>" + c + "</option>").join("");
+  $("f-cat").addEventListener("change", e => { S.cat = e.target.value; render(); });
+  $("f-sort").addEventListener("change", e => { S.sort = e.target.value; render(); });
+
+  function renderStats() {
+    const it = S.items, n = it.length;
+    const count = k => it.filter(c => c.stage === k).length;
+    const wait = count("received"), done = count("done"), rej = count("rejected");
+    const resp = it.map(c => { const f = firstResponseAt(c); return f ? (new Date(f) - new Date(c.createdAt)) / DAY : null; }).filter(x => x != null && x >= 0);
+    const set = (id, v) => ($(id).textContent = S.loaded ? v : "–");
+    set("s-total", n); set("s-wait", wait); set("s-prog", n - wait - done - rej); set("s-done", done);
+    set("s-rate", n ? Math.round(done / n * 100) + "%" : "–");
+    set("s-avg", resp.length ? (resp.reduce((a, b) => a + b, 0) / resp.length).toFixed(1) + "일" : "–");
+  }
+
+  function match(c) {
+    const s = c.stage;
+    if (S.filter === "wait" && s !== "received") return false;
+    if (S.filter === "prog" && ["assigned", "review", "forwarded"].indexOf(s) < 0) return false;
+    if (S.filter === "done" && s !== "done") return false;
+    if (S.filter === "rejected" && s !== "rejected") return false;
+    if (S.cat !== "all" && c.category !== S.cat) return false;
+    return true;
+  }
+
+  function render() {
+    renderStats();
+    if (!S.loaded) return;
+    const list = $("list");
+    if (!S.items.length) { list.innerHTML = '<div class="empty">아직 접수된 민원이 없어요. 첫 민원을 남겨주세요.</div>'; return; }
+    const items = S.items.filter(match).sort(S.sort === "likes"
+      ? (a, b) => (b.likes || 0) - (a.likes || 0) || (b.createdAt > a.createdAt ? 1 : -1)
+      : (a, b) => (b.createdAt > a.createdAt ? 1 : -1));
+    list.innerHTML = items.length ? items.map(itemHTML).join("") : '<div class="empty">조건에 맞는 민원이 없어요.</div>';
+  }
+
+  function itemHTML(c) {
+    const s = STAGES[c.stage] || STAGES.received;
+    const age = daysSince(c.createdAt);
+    const left = CFG.firstReplyDays - age;
+    const isWait = c.stage === "received";
+    const open = S.open === c.id;
+    const n = c.likes || 0;
+    const meta = [
+      '<span class="pill ' + s.light + '">' + s.label + "</span>",
+      '<span class="tag">' + esc(c.category) + "</span>",
+      c.sample ? '<span class="tag sample">예시</span>' : "",
+      "<span>" + fmtDate(c.createdAt) + " 접수</span>",
+      c.dept ? "<span>담당 " + esc(c.dept) + "</span>" : "",
+      isWait ? (left <= 0 ? '<span class="late">1차 답변 기한 초과</span>' : "<span>답변 기한까지 " + left + "일</span>") : "",
+    ].join("");
+    return '<div class="item"><button type="button" class="row" data-open="' + esc(c.id) + '" aria-expanded="' + open + '">' +
+      '<span class="dot ' + s.light + '" aria-hidden="true"></span>' +
+      "<span><h3>" + esc(c.title) + '</h3><span class="meta">' + meta + "</span></span>" +
+      '<span class="like-n' + (n >= CFG.likeGoal ? " hot" : "") + '" title="공감 수">♥ ' + n + "</span></button>" +
+      (open ? detailHTML(c, s, n) : "") + "</div>";
+  }
+
+  function detailHTML(c, s, n) {
+    const hist = c.history && c.history.length ? c.history : [{ stage: "received", at: c.createdAt }];
+    const at = k => { for (let i = hist.length - 1; i >= 0; i--) if (hist[i].stage === k) return fmtDate(hist[i].at); return ""; };
+    let steps;
+    if (c.stage === "rejected") {
+      steps = ["received", "rejected"].map(k => '<div class="step on"><span class="b"></span>' + STAGES[k].label + '<span class="d">' + (at(k) || (k === "received" ? fmtDate(c.createdAt) : "")) + "</span></div>").join("");
+    } else {
+      const idx = TRACK.indexOf(c.stage);
+      steps = TRACK.map((k, i) => '<div class="step' + (i <= idx ? " on" : "") + '"><span class="b"></span>' + STAGES[k].label + '<span class="d">' + (i <= idx ? (at(k) || (k === "received" ? fmtDate(c.createdAt) : "")) : "") + "</span></div>").join("");
+    }
+    const reply = c.reply
+      ? '<div class="reply"><div class="who">' + esc(c.dept || "학생회") + " 답변" + (c.updatedAt ? " · " + fmtDate(c.updatedAt) : "") + "</div><p>" + esc(c.reply) + "</p></div>"
+      : '<div class="reply muted"><div class="who">답변</div><p>아직 답변이 없어요. 접수 후 ' + CFG.firstReplyDays + "일 안에 1차 답변이 올라옵니다.</p></div>";
+    const liked = myLikes().has(c.id);
+    const goal = n >= CFG.likeGoal ? "공감 " + CFG.likeGoal + "개 달성 · 학장 간담회 안건 대상" : "간담회 안건까지 공감 " + (CFG.likeGoal - n) + "개";
+    return '<div class="detail"><p class="body">' + esc(c.body) + "</p>" +
+      '<div class="track" aria-label="처리 단계">' + steps + "</div>" + reply +
+      '<div class="actions"><button type="button" class="btn' + (liked ? " liked" : "") + '" data-like="' + esc(c.id) + '" aria-pressed="' + liked + '"' + (S.busy.has(c.id) ? " disabled" : "") + ">♥ " + (liked ? "공감함" : "나도 불편해요") + "</button>" +
+      '<span class="goal">' + goal + "</span></div></div>";
+  }
+
+  $("list").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.open) { S.open = S.open === b.dataset.open ? null : b.dataset.open; render(); return; }
+    if (b.dataset.like) toggleLike(b.dataset.like);
+  });
+
+  async function toggleLike(id) {
+    const c = S.items.find(x => x.id === id); if (!c || S.busy.has(id)) return;
+    const mine = myLikes(); const on = !mine.has(id); const delta = on ? 1 : -1;
+    on ? mine.add(id) : mine.delete(id); saveLikes(mine);
+    c.likes = Math.max(0, (c.likes || 0) + delta); render();
+    if (DEMO) return;
+    S.busy.add(id); render();
+    try { const r = await api({ action: "like", id: id, delta: delta }); c.likes = r.likes; }
+    catch (e) { on ? mine.delete(id) : mine.add(id); saveLikes(mine); c.likes = Math.max(0, c.likes - delta); toast("공감을 저장하지 못했어요. 잠시 뒤 다시 눌러주세요."); }
+    S.busy.delete(id); render();
+  }
+
+  $("form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = $("form-err");
+    const title = $("in-title").value.trim(), body = $("in-body").value.trim();
+    if (!title || !body) { err.textContent = "제목과 내용을 모두 적어주세요."; err.hidden = false; return; }
+    err.hidden = true;
+    if (DEMO) { toast("미리보기 모드라 저장되지 않았어요."); return; }
+    const btn = $("in-submit"); btn.disabled = true; btn.textContent = "접수하는 중…";
+    try {
+      const r = await api({ action: "submit", title: title, body: body, category: $("in-cat").value, private: $("in-private").checked, website: $("in-web").value });
+      $("in-title").value = ""; $("in-body").value = "";
+      const wasPrivate = $("in-private").checked; $("in-private").checked = false;
+      toast(wasPrivate ? "비공개로 접수됐어요. 학생회만 확인합니다." : "접수됐어요. 신호등이 빨간불로 켜졌습니다.");
+      await load(true);
+      if (!wasPrivate && r.id) { S.open = r.id; S.filter = "all"; buildControls(); render(); $("board").scrollIntoView({ behavior: "smooth", block: "start" }); }
+    } catch (x) {
+      err.textContent = x.message && /[가-힣]/.test(x.message) ? x.message : "접수하지 못했어요. 잠시 뒤 다시 시도해주세요."; err.hidden = false;
+    } finally { btn.disabled = false; btn.textContent = "접수하기"; }
+  });
+
+  buildControls();
+  load();
+  if (!DEMO) setInterval(() => { if (!document.hidden) load(true); }, 60000);
+})();
+</script>
+</body>
+</html>
