@@ -22,6 +22,12 @@ const DEPTS = ['회장단', '사무국', '기획국', '복지국', '홍보국', 
 // 도배 방지: 10분 동안 전체 접수 최대 건수
 const MAX_SUBMITS_PER_10MIN = 30;
 
+// 새 민원 알림 메일
+// 비워두면 이 스크립트를 배포한 계정(학생회 계정)으로 갑니다.
+// 여러 명에게 보내려면 쉼표로 이어 적으세요. 예: 'a@gmail.com, b@gmail.com'
+const NOTIFY_EMAIL = '';
+const NOTIFY_ON = true;
+
 /* ---------- 최초 설정 ---------- */
 function setup() {
   const ss = SpreadsheetApp.getActive();
@@ -133,7 +139,56 @@ function submit_(b) {
     id, now, category, title, text, b.private ? 'Y' : '', '접수', '', '', 0,
     JSON.stringify([{ stage: 'received', at: now.toISOString() }]), now,
   ]);
+  notify_({ id: id, category: category, title: title, body: text, private: !!b.private, at: now });
   return { ok: true, id: id };
+}
+
+/* ---------- 새 민원 알림 메일 ---------- */
+function notifyTo_() {
+  return (NOTIFY_EMAIL || Session.getEffectiveUser().getEmail() || '').trim();
+}
+
+function notify_(c) {
+  if (!NOTIFY_ON) return;
+  const to = notifyTo_();
+  if (!to) return;
+  try {
+    const url = SpreadsheetApp.getActive().getUrl();
+    const when = Utilities.formatDate(c.at, 'Asia/Seoul', 'M월 d일 HH:mm');
+    const strip = s => String(s).replace(/^'/, '');
+    const subject = '[인문 신호등] 새 민원 · ' + c.category + ' · ' + strip(c.title) + (c.private ? ' (비공개)' : '');
+    const plain = [
+      '새 민원이 접수됐어요.', '',
+      '분류: ' + c.category,
+      '제목: ' + strip(c.title),
+      '접수: ' + when + (c.private ? ' · 비공개 요청' : ''),
+      'ID: ' + c.id, '',
+      strip(c.body), '',
+      '1차 답변 기한은 접수 후 3일입니다.',
+      '시트에서 처리하기: ' + url,
+    ].join('\n');
+    const esc = s => strip(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+    const html =
+      '<div style="font-family:sans-serif;font-size:14px;line-height:1.6;color:#18213a;max-width:560px">' +
+      '<p style="margin:0 0 12px;color:#d6453b;font-weight:bold">● 새 민원이 접수됐어요</p>' +
+      '<h2 style="margin:0 0 6px;font-size:18px">' + esc(c.title) + '</h2>' +
+      '<p style="margin:0 0 14px;color:#7c859c;font-size:13px">' + esc(c.category) + ' · ' + when +
+      (c.private ? ' · <b style="color:#d6453b">비공개 요청</b>' : '') + ' · ID ' + c.id + '</p>' +
+      '<div style="white-space:pre-wrap;background:#f4f6f9;border-radius:8px;padding:12px 14px;margin-bottom:16px">' + esc(c.body) + '</div>' +
+      '<p style="margin:0 0 16px;font-size:13px;color:#4a5470">1차 답변 기한은 접수 후 3일입니다.</p>' +
+      '<a href="' + url + '" style="display:inline-block;background:#23336b;color:#fff;text-decoration:none;padding:9px 16px;border-radius:999px;font-weight:bold">시트에서 처리하기</a>' +
+      '</div>';
+    MailApp.sendEmail({ to: to, subject: subject, body: plain, htmlBody: html, name: '인문 신호등' });
+  } catch (e) {
+    // 메일이 실패해도 접수는 저장됩니다 (하루 발송 한도 초과 등)
+    console.warn('알림 메일 실패: ' + e);
+  }
+}
+
+// 메일 권한 허용 + 시험 발송용. ▶ 실행하면 알림 받을 주소로 시험 메일이 갑니다.
+function testEmail() {
+  notify_({ id: 'test', category: '기타', title: '알림 메일 시험 발송', body: '이 메일이 보이면 새 민원 알림이 정상 동작합니다.', private: false, at: new Date() });
+  return '시험 메일을 보냈어요: ' + notifyTo_();
 }
 
 function like_(b) {
