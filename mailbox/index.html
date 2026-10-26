@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>느린 우체통</title>
+<meta name="description" content="인문과학대학 학생회 느린 우체통. 지금 쓴 편지는 정해진 날 한꺼번에 열려요.">
+<meta property="og:title" content="느린 우체통">
+<meta property="og:description" content="인문과학대학 학생회끼리 주고받는 롤링페이퍼 · 정해진 날 한꺼번에 열려요">
+<meta name="theme-color" content="#ee4d3e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='3' width='22' height='24' rx='9' fill='%23ee4d3e'/%3E%3Crect x='10' y='10' width='12' height='3' rx='1.5' fill='%231d2230'/%3E%3Crect x='9' y='27' width='3' height='4' fill='%23c93a2d'/%3E%3Crect x='20' y='27' width='3' height='4' fill='%23c93a2d'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800;900&family=Gaegu:wght@400;700&display=swap">
+<script src="config.js?v=1"></script>
+<style>
+/* Layout: a bright desk of mailboxes. Post-box header + countdown, a slot for everyone, a grid of personal boxes; after the reveal each box opens into a wall of taped notes. */
+:root {
+  --bg: #f5f7fb;
+  --dot: #dfe5f0;
+  --card: #ffffff;
+  --ink: #1d2230;
+  --ink-2: #565e72;
+  --ink-3: #8d94a6;
+  --line: #e5e9f1;
+  --red: #ee4d3e;
+  --red-deep: #c93a2d;
+  --red-soft: #ffe7e3;
+  --p-butter: #fff0b0;
+  --p-mint: #d2f2df;
+  --p-peach: #ffd8ca;
+  --p-sky: #d4e8ff;
+  --p-lilac: #e7dbfb;
+  --tape: rgba(255, 255, 255, .62);
+  --shadow: 0 1px 2px rgba(29, 34, 48, .06), 0 8px 24px rgba(29, 34, 48, .07);
+  --f-display: "Gothic A1", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-body: "Gothic A1", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-hand: "Gaegu", "Nanum Pen Script", "Apple SD Gothic Neo", cursive;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6;
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dot) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(28px + env(safe-area-inset-top, 0px)) calc(110px + env(safe-area-inset-bottom, 0px));
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+[hidden] { display: none !important; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2.5px solid var(--red); outline-offset: 2px; }
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 26px; }
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; gap: 18px 24px; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.brand svg { width: 58px; height: 72px; flex: none; }
+.brand h1 { font-family: var(--f-display); font-weight: 900; font-size: clamp(30px, 5.4vw, 44px); letter-spacing: -0.035em; line-height: 1.05; margin: 0; }
+.brand p { margin: 6px 0 0; color: var(--ink-2); font-size: 14px; }
+.when { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 999px; padding: 8px 8px 8px 18px; box-shadow: var(--shadow); }
+.when .l { font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+.when .l b { color: var(--ink); font-weight: 700; display: block; font-size: 14px; }
+.dday { background: var(--red); color: #fff; font-weight: 900; font-size: 18px; letter-spacing: -0.02em; border-radius: 999px; padding: 8px 16px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dday.open { background: var(--ink); }
+
+.lead { margin: 0; font-size: 15.5px; color: var(--ink-2); max-width: 60ch; }
+.lead b { color: var(--ink); }
+.banner { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; background: var(--card); border: 1.5px dashed var(--line); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; color: var(--ink-2); }
+.toggle { border: 0; background: var(--ink); color: #fff; border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+/* Everyone slot */
+.everyone { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: center; background: var(--red); color: #fff; border: 0; border-radius: 22px; padding: 20px 22px; cursor: pointer; text-align: left; width: 100%; box-shadow: 0 10px 30px rgba(238, 77, 62, .25); transition: transform .15s ease; }
+.everyone:hover { transform: translateY(-2px); }
+.everyone .slot { width: 54px; height: 12px; background: rgba(0, 0, 0, .28); border-radius: 6px; }
+.everyone h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.everyone p { margin: 2px 0 0; font-size: 13.5px; opacity: .88; }
+.everyone .n { font-weight: 900; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; text-align: right; }
+.everyone .n small { font-size: 14px; font-weight: 700; margin-left: 2px; }
+
+/* Personal boxes */
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.sec-h h3 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
+.sec-h span { font-size: 13px; color: var(--ink-3); }
+.boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.box { position: relative; background: var(--card); border: 0; border-radius: 18px; padding: 16px 16px 14px; text-align: left; cursor: pointer; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px; min-height: 132px; transition: transform .15s ease, box-shadow .15s ease; }
+.box:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(29,34,48,.06), 0 14px 30px rgba(29,34,48,.1); }
+.box .nm { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+.box .stack { display: flex; align-items: flex-end; gap: 0; height: 34px; margin-top: auto; }
+.env { width: 34px; height: 24px; border-radius: 4px; margin-right: -18px; position: relative; box-shadow: 0 1px 2px rgba(29,34,48,.12); }
+.env::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom right, transparent 49%, rgba(29,34,48,.09) 50%, transparent 51%), linear-gradient(to bottom left, transparent 49%, rgba(29,34,48,.09) 50%, transparent 51%); background-size: 100% 60%; background-repeat: no-repeat; border-radius: 4px; }
+.box .cnt { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.box .cnt b { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+.box .cnt b small { font-size: 13px; font-weight: 700; color: var(--ink-2); margin-left: 2px; }
+.box .cnt { flex-wrap: wrap; }
+.box .act { font-size: 12.5px; font-weight: 700; color: var(--red); white-space: nowrap; }
+.box .zero { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.box.bump { animation: bump .5s ease; }
+@keyframes bump { 30% { transform: translateY(-6px) scale(1.04); } }
+
+/* Reading view */
+.back { align-self: flex-start; border: 0; background: var(--card); box-shadow: var(--shadow); border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 14px; cursor: pointer; }
+.read-h { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end; justify-content: space-between; }
+.read-h h2 { margin: 0; font-size: clamp(26px, 4.6vw, 38px); font-weight: 900; letter-spacing: -0.035em; line-height: 1.15; text-wrap: balance; }
+.read-h h2 em { font-style: normal; color: var(--red); }
+.read-h p { margin: 6px 0 0; color: var(--ink-2); }
+.wall { columns: 3 260px; column-gap: 18px; }
+.note { break-inside: avoid; position: relative; border-radius: 6px; padding: 30px 22px 18px; margin: 0 0 22px; box-shadow: 0 2px 4px rgba(29,34,48,.06), 0 10px 22px rgba(29,34,48,.08); }
+.note::before { content: ""; position: absolute; top: -9px; left: 50%; width: 86px; height: 22px; margin-left: -43px; background: var(--tape); border: 1px solid rgba(255,255,255,.8); transform: rotate(-3deg); box-shadow: 0 1px 2px rgba(29,34,48,.08); }
+.note p { margin: 0; font-family: var(--f-hand); font-size: 21px; line-height: 1.45; white-space: pre-wrap; color: #2a2f3c; }
+.note .from { margin-top: 14px; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 12.5px; color: rgba(29,34,48,.55); }
+.note .from b { font-family: var(--f-hand); font-size: 19px; font-weight: 700; color: rgba(29,34,48,.78); }
+.note .to-tag { font-family: var(--f-body); font-size: 12px; font-weight: 700; color: rgba(29,34,48,.6); margin-bottom: 6px; }
+.c-butter { background: var(--p-butter); } .c-mint { background: var(--p-mint); } .c-peach { background: var(--p-peach); } .c-sky { background: var(--p-sky); } .c-lilac { background: var(--p-lilac); }
+.empty { background: var(--card); border-radius: 18px; padding: 40px 20px; text-align: center; color: var(--ink-3); box-shadow: var(--shadow); }
+
+/* Floating write button */
+.fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); border: 0; background: var(--ink); color: #fff; border-radius: 999px; padding: 15px 26px; font-weight: 800; font-size: 16px; cursor: pointer; display: inline-flex; gap: 10px; align-items: center; box-shadow: 0 12px 30px rgba(29,34,48,.28); z-index: 5; }
+.fab:hover { background: #2b3246; }
+.fab i { width: 22px; height: 15px; border-radius: 3px; background: var(--p-butter); position: relative; }
+.fab i::after { content: ""; position: absolute; inset: 0; border-radius: 3px; background: linear-gradient(to bottom right, transparent 48%, rgba(29,34,48,.35) 50%, transparent 52%), linear-gradient(to bottom left, transparent 48%, rgba(29,34,48,.35) 50%, transparent 52%); background-size: 100% 62%; background-repeat: no-repeat; }
+
+/* Sheet (write dialog / gate) */
+.scrim { position: fixed; inset: 0; background: rgba(29, 34, 48, .38); z-index: 30; display: flex; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.sheet { background: var(--card); border-radius: 24px; width: 100%; max-width: 520px; max-height: 100%; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 30px 80px rgba(29,34,48,.3); }
+@media (max-width: 560px) {
+  .scrim { align-items: flex-end; padding: 0; }
+  .sheet { border-radius: 24px 24px 0 0; max-height: 92%; padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
+}
+.sheet-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sheet-h h2 { margin: 0; font-size: 21px; font-weight: 900; letter-spacing: -0.03em; }
+.x { border: 0; background: var(--bg); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; line-height: 1; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label, .field > .lb { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.field select, .field input[type=text], .field input[type=password] { width: 100%; border: 1.5px solid var(--line); background: var(--bg); border-radius: 12px; padding: 11px 13px; font-size: 16px; }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.sw { width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(29,34,48,.08); cursor: pointer; padding: 0; }
+.sw[aria-checked="true"] { box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--ink); }
+.paper { border-radius: 10px; padding: 16px 18px 10px; position: relative; }
+.paper textarea { width: 100%; min-height: 170px; border: 0; background: transparent; resize: vertical; font-family: var(--f-hand); font-size: 22px; line-height: 1.45; color: #2a2f3c; padding: 0; background-image: repeating-linear-gradient(transparent 0 31px, rgba(29,34,48,.09) 31px 32px); background-attachment: local; }
+.paper textarea:focus { outline: none; }
+.paper .cc { text-align: right; font-size: 12px; color: rgba(29,34,48,.5); }
+.row2 { display: flex; gap: 10px; align-items: center; }
+.row2 input[type=text] { flex: 1; min-width: 0; }
+.check { display: flex; align-items: center; gap: 7px; font-size: 14px; color: var(--ink-2); white-space: nowrap; }
+.send { border: 0; background: var(--red); color: #fff; border-radius: 14px; padding: 14px; font-weight: 800; font-size: 16px; cursor: pointer; }
+.send:hover { background: var(--red-deep); }
+.send:disabled { opacity: .55; cursor: not-allowed; }
+.hint { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+.err { margin: 0; font-size: 13.5px; color: var(--red-deep); font-weight: 700; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(92px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 14px; font-size: 14px; font-weight: 500; box-shadow: 0 10px 30px rgba(29,34,48,.25); z-index: 40; max-width: calc(100% - 32px); text-align: center; }
+.loading { color: var(--ink-3); text-align: center; padding: 40px 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .note { animation: drop .4s ease backwards; }
+  @keyframes drop { from { opacity: 0; transform: translateY(-8px) rotate(var(--r, 0deg)); } }
+  .sheet { animation: rise .22s ease; }
+  @keyframes rise { from { transform: translateY(14px); opacity: .6; } }
+}
+@media (prefers-reduced-motion: reduce) { .box, .everyone { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 58 72" aria-hidden="true">
+        <rect x="4" y="2" width="50" height="56" rx="20" fill="#ee4d3e"/>
+        <rect x="4" y="30" width="50" height="5" fill="#c93a2d"/>
+        <rect x="15" y="16" width="28" height="6" rx="3" fill="#1d2230"/>
+        <rect x="17" y="40" width="24" height="10" rx="3" fill="#fff" opacity=".92"/>
+        <rect x="14" y="58" width="7" height="12" rx="2" fill="#c93a2d"/>
+        <rect x="37" y="58" width="7" height="12" rx="2" fill="#c93a2d"/>
+      </svg>
+      <div>
+        <h1>느린 우체통</h1>
+        <p>인문과학대학 학생회끼리 주고받는 롤링페이퍼</p>
+      </div>
+    </div>
+    <div class="when" id="when"><span class="l">여는 날을<b>불러오는 중</b></span><span class="dday">D-?</span></div>
+  </header>
+
+  <div class="banner" id="demo-banner" hidden>
+    <span>미리보기 모드예요. 지금 보이는 이름과 편지는 예시이고, 써도 저장되지 않아요.</span>
+    <button type="button" class="toggle" id="demo-toggle">여는 날 이후 화면 보기</button>
+  </div>
+
+  <main id="view"><div class="loading">우체통을 여는 중이에요.</div></main>
+</div>
+
+<button type="button" class="fab" id="fab" hidden><i aria-hidden="true"></i>편지 쓰기</button>
+
+<div class="scrim" id="gate" hidden>
+  <form class="sheet" id="gate-form" novalidate>
+    <div class="sheet-h"><h2>학생회 암호</h2></div>
+    <p class="hint" style="font-size:14px;color:var(--ink-2)">학생회 단톡방에 공유된 암호를 입력해주세요. 이 기기에서는 한 번만 입력하면 돼요.</p>
+    <div class="field"><label for="gate-code">암호</label><input type="password" id="gate-code" autocomplete="off"></div>
+    <p class="err" id="gate-err" hidden></p>
+    <button class="send" type="submit" id="gate-btn">들어가기</button>
+  </form>
+</div>
+
+<div class="scrim" id="write" hidden>
+  <form class="sheet" id="write-form" novalidate role="dialog" aria-modal="true" aria-labelledby="write-title">
+    <div class="sheet-h"><h2 id="write-title">편지 쓰기</h2><button type="button" class="x" id="write-close" aria-label="닫기">✕</button></div>
+    <div class="field"><label for="w-to">받는 사람</label><select id="w-to"></select></div>
+    <div class="field"><span class="lb" id="sw-lb">편지지</span><div class="swatches" id="w-color" role="radiogroup" aria-labelledby="sw-lb"></div></div>
+    <div class="paper c-butter" id="w-paper">
+      <textarea id="w-body" maxlength="600" aria-label="편지 내용" placeholder="고마웠던 순간, 하고 싶었던 말을 적어주세요"></textarea>
+      <div class="cc"><span id="w-cc">0</span> / 600</div>
+    </div>
+    <div class="field">
+      <label for="w-from">보내는 사람</label>
+      <div class="row2"><input type="text" id="w-from" maxlength="20" placeholder="이름 또는 별명"><label class="check"><input type="checkbox" id="w-anon"> 익명</label></div>
+    </div>
+    <div class="hp" aria-hidden="true"><label for="w-web">웹사이트</label><input type="text" id="w-web" tabindex="-1" autocomplete="off"></div>
+    <p class="err" id="w-err" hidden></p>
+    <button class="send" type="submit" id="w-send">우체통에 넣기</button>
+    <p class="hint" id="w-hint"></p>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  const CFG = Object.assign({ scriptUrl: "" }, window.MAILBOX_CONFIG || {});
+  const API = (CFG.scriptUrl || "").trim();
+  const DEMO = !API;
+  const ALL = "__all__";
+  const COLORS = [["butter", "노랑"], ["mint", "민트"], ["peach", "복숭아"], ["sky", "하늘"], ["lilac", "라일락"]];
+  const CODE_KEY = "slow-mailbox-code", FROM_KEY = "slow-mailbox-from";
+
+  const S = { members: [], counts: {}, letters: [], revealed: false, revealAt: null, code: "", view: null, color: "butter", demoOpen: false, loaded: false };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const store = { get(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+  const kst = (d, opt) => new Intl.DateTimeFormat("ko-KR", Object.assign({ timeZone: "Asia/Seoul" }, opt)).format(d);
+  const nameOf = k => k === ALL ? "학생회 모두" : k;
+
+  let toastT;
+  function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 2800); }
+
+  /* ---------- 예시 데이터 ---------- */
+  function demoData() {
+    const members = ["서연", "지호", "하은", "도윤", "유나", "태민", "수아", "현우"];
+    const L = (to, from, color, body) => ({ to, from, color, body, at: "2026-10-20T10:00:00+09:00" });
+    const letters = [
+      L("서연", "익명", "butter", "고공제 부스 철야할 때 마지막까지 남아서 정리해준 거 진짜 고마웠어. 그날 새벽 편의점 컵라면 평생 기억할 듯"),
+      L("서연", "지호", "sky", "회의록 늘 깔끔하게 정리해줘서 덕분에 회의 끝나고 헤맨 적이 없어!"),
+      L("서연", "익명", "mint", "말 안 해도 먼저 챙겨주는 사람. 올해 같이 해서 든든했어"),
+      L("지호", "하은", "peach", "운영위 발제 준비할 때 자료 같이 찾아줘서 고마워. 다음 학기에도 잘 부탁해"),
+      L("지호", "익명", "lilac", "회의 분위기 어색할 때마다 한마디로 풀어주는 능력자"),
+      L("하은", "익명", "butter", "홍보 카드뉴스 매번 너무 예뻐서 저장해둠ㅋㅋ"),
+      L("하은", "도윤", "mint", "늦게까지 디자인 수정해준 거 다 알아. 진짜 수고 많았어"),
+      L("도윤", "익명", "sky", "예산안 숫자 하나하나 맞춰보던 모습이 기억에 남아. 꼼꼼함 최고"),
+      L("유나", "태민", "peach", "유학생 행사 때 통역까지 해준 거 감동이었어"),
+      L("태민", "익명", "lilac", "MT 장보기 담당 고생했다! 고기 양 완벽했음"),
+      L(ALL, "익명", "butter", "올해 인문대 학생회 다들 진짜 고생 많았어요. 회의실 불 꺼질 때까지 같이 있던 시간들이 제일 기억에 남을 것 같아요"),
+      L(ALL, "수아", "mint", "처음 들어왔을 때 아무것도 몰랐는데 다들 친절하게 알려줘서 고마웠어요!"),
+      L(ALL, "익명", "sky", "종강총회까지 다들 아프지 말고 끝까지 파이팅"),
+    ];
+    return { members, letters, revealAt: "2026-12-19T18:00:00+09:00" };
+  }
+  let DEMO_DATA = null;
+
+  /* ---------- 데이터 ---------- */
+  function apply(d) {
+    S.members = d.members || [];
+    S.revealAt = d.revealAt ? new Date(d.revealAt) : null;
+    S.revealed = !!d.revealed;
+    S.counts = d.counts || {};
+    S.letters = d.letters || [];
+    S.loaded = true;
+  }
+  function demoApply() {
+    if (!DEMO_DATA) DEMO_DATA = demoData();
+    const counts = {};
+    DEMO_DATA.letters.forEach(l => (counts[l.to] = (counts[l.to] || 0) + 1));
+    apply({ members: DEMO_DATA.members, revealAt: DEMO_DATA.revealAt, revealed: S.demoOpen, counts, letters: S.demoOpen ? DEMO_DATA.letters : [] });
+  }
+
+  async function load() {
+    if (DEMO) { demoApply(); render(); return; }
+    try {
+      const res = await fetch(API + (API.includes("?") ? "&" : "?") + "code=" + encodeURIComponent(S.code) + "&t=" + Date.now());
+      const d = await res.json();
+      if (!d.ok) {
+        if (d.error === "wrong_code") { store.del(CODE_KEY); openGate(S.code ? "암호가 맞지 않아요. 다시 확인해주세요." : ""); return; }
+        throw new Error(d.error);
+      }
+      $("gate").hidden = true;
+      apply(d); render();
+    } catch (e) {
+      $("view").innerHTML = '<div class="empty">우체통을 열지 못했어요. 잠시 뒤 새로고침해주세요.</div>';
+    }
+  }
+
+  async function post(payload) {
+    const res = await fetch(API, { method: "POST", body: JSON.stringify(Object.assign({ code: S.code }, payload)) });
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error || "보내지 못했어요.");
+    return d;
+  }
+
+  /* ---------- 화면 ---------- */
+  function renderWhen() {
+    const w = $("when");
+    if (!S.revealAt) { w.hidden = true; return; }
+    w.hidden = false;
+    const label = kst(S.revealAt, { month: "long", day: "numeric", weekday: "short" }) + " " + kst(S.revealAt, { hour: "numeric", minute: "2-digit" });
+    if (S.revealed) {
+      w.innerHTML = '<span class="l">우체통이 열렸어요<b>' + esc(label) + "</b></span><span class=\"dday open\">OPEN</span>";
+    } else {
+      const day = s => new Date(kst(s, { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\. /g, "-").replace(".", ""));
+      const diff = Math.round((day(S.revealAt) - day(new Date())) / 86400000);
+      w.innerHTML = '<span class="l">여는 날<b>' + esc(label) + '</b></span><span class="dday">' + (diff > 0 ? "D-" + diff : "D-DAY") + "</span>";
+    }
+  }
+
+  function envelopes(n) {
+    const cols = ["butter", "mint", "peach", "sky", "lilac"];
+    let h = "";
+    for (let i = 0; i < Math.min(n, 6); i++) h += '<span class="env c-' + cols[i % 5] + '" style="transform:rotate(' + ((i % 3) - 1) * 4 + 'deg) translateY(' + (i % 2) * -3 + 'px)"></span>';
+    return h;
+  }
+
+  function render() {
+    renderWhen();
+    $("demo-banner").hidden = !DEMO;
+    $("demo-toggle").textContent = S.demoOpen ? "여는 날 이전 화면 보기" : "여는 날 이후 화면 보기";
+    $("fab").hidden = !S.loaded;
+    if (!S.loaded) return;
+    if (S.view && S.revealed) return renderRead(S.view);
+    S.view = null;
+    const total = Object.values(S.counts).reduce((a, b) => a + b, 0);
+    const date = S.revealAt ? kst(S.revealAt, { month: "long", day: "numeric" }) : "여는 날";
+    const lead = S.revealed
+      ? "우체통이 열렸어요. <b>이름을 누르면</b> 그 사람에게 온 편지를 읽을 수 있어요. 지금 쓰는 편지도 바로 전해져요."
+      : "지금 쓴 편지는 <b>" + esc(date) + "에 한꺼번에</b> 열려요. 그 전까지는 누가 몇 통 받았는지만 보이고, 내용은 아무도 볼 수 없어요.";
+    const allN = S.counts[ALL] || 0;
+    const boxes = S.members.map(m => {
+      const n = S.counts[m] || 0;
+      return '<button type="button" class="box" data-box="' + esc(m) + '"><span class="nm">' + esc(m) + "</span>" +
+        '<span class="stack" aria-hidden="true">' + envelopes(n) + "</span>" +
+        '<span class="cnt">' + (n ? "<b>" + n + "<small>통</small></b>" : '<span class="zero">아직 없어요</span>') +
+        '<span class="act">' + (S.revealed && n ? "열어보기" : "편지 쓰기") + "</span></span></button>";
+    }).join("");
+    $("view").innerHTML =
+      '<div style="display:flex;flex-direction:column;gap:26px">' +
+      '<p class="lead">' + lead + "</p>" +
+      '<button type="button" class="everyone" data-box="' + ALL + '"><span class="slot" aria-hidden="true"></span>' +
+      "<span><h2>학생회 모두에게</h2><p>" + (S.revealed ? "모두가 함께 읽는 편지" : "한 사람이 아니라 우리 모두에게 하고 싶은 말") + "</p></span>" +
+      '<span class="n">' + allN + "<small>통</small></span></button>" +
+      '<div class="sec-h"><h3>한 사람에게</h3><span>지금까지 ' + total + "통이 들어왔어요</span></div>" +
+      (S.members.length ? '<div class="boxes">' + boxes + "</div>" : '<div class="empty">아직 등록된 이름이 없어요. 시트의 \'멤버\' 탭에 집행부원 이름을 적어주세요.</div>') +
+      "</div>";
+  }
+
+  function renderRead(who) {
+    const list = S.letters.filter(l => l.to === who);
+    const rot = i => [-1.6, 1.2, -0.6, 1.8, -1.2, 0.7][i % 6];
+    const notes = list.map((l, i) =>
+      '<div class="note c-' + esc(l.color || "butter") + '" style="--r:' + rot(i) + "deg;transform:rotate(" + rot(i) + "deg);animation-delay:" + Math.min(i, 10) * 50 + 'ms">' +
+      "<p>" + esc(l.body) + '</p><div class="from"><span>' + (l.at ? esc(kst(new Date(l.at), { month: "numeric", day: "numeric" })) : "") + "</span><b>" + (l.from && l.from !== "익명" ? "from. " + esc(l.from) : "익명") + "</b></div></div>"
+    ).join("");
+    $("view").innerHTML =
+      '<div style="display:flex;flex-direction:column;gap:22px">' +
+      '<button type="button" class="back" id="back">← 우체통으로</button>' +
+      '<div class="read-h"><div><h2><em>' + esc(nameOf(who)) + "</em>에게 온 편지 " + list.length + "통</h2>" +
+      "<p>" + (who === ALL ? "올해 함께한 모두에게 남겨진 말들이에요." : "한 통씩 천천히 읽어보세요.") + "</p></div></div>" +
+      (list.length ? '<div class="wall">' + notes + "</div>" : '<div class="empty">아직 받은 편지가 없어요. 첫 편지를 써볼까요?</div>') +
+      "</div>";
+    $("back").onclick = () => { S.view = null; render(); window.scrollTo({ top: 0 }); };
+  }
+
+  $("view").addEventListener("click", e => {
+    const b = e.target.closest("[data-box]"); if (!b) return;
+    const who = b.dataset.box;
+    if (S.revealed && (S.counts[who] || 0) > 0) { S.view = who; render(); window.scrollTo({ top: 0 }); }
+    else openWrite(who);
+  });
+
+  /* ---------- 편지 쓰기 ---------- */
+  $("w-color").innerHTML = COLORS.map(([k, l]) => '<button type="button" class="sw c-' + k + '" role="radio" aria-label="' + l + '" aria-checked="' + (k === S.color) + '" data-c="' + k + '"></button>').join("");
+  $("w-color").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (!b) return; setColor(b.dataset.c); });
+  function setColor(c) {
+    S.color = c;
+    $("w-paper").className = "paper c-" + c;
+    $("w-color").querySelectorAll("[data-c]").forEach(b => b.setAttribute("aria-checked", String(b.dataset.c === c)));
+  }
+  $("w-body").addEventListener("input", () => ($("w-cc").textContent = $("w-body").value.length));
+  $("w-anon").addEventListener("change", () => { $("w-from").disabled = $("w-anon").checked; });
+
+  let lastFocus = null;
+  function openWrite(to) {
+    lastFocus = document.activeElement;
+    $("w-to").innerHTML = '<option value="' + ALL + '">학생회 모두에게</option>' + S.members.map(m => '<option value="' + esc(m) + '">' + esc(m) + "에게</option>").join("");
+    $("w-to").value = to || (S.view || ALL);
+    if (!$("w-from").value) $("w-from").value = store.get(FROM_KEY);
+    $("w-err").hidden = true;
+    const date = S.revealAt ? kst(S.revealAt, { month: "long", day: "numeric" }) : "여는 날";
+    $("w-hint").textContent = S.revealed ? "넣는 즉시 받는 사람이 읽을 수 있어요. 우체통이 열린 뒤에는 학생회 모두가 편지를 볼 수 있어요." : date + "에 열려요. 열린 뒤에는 학생회 모두가 편지를 볼 수 있어요. 넣은 편지는 고칠 수 없어요.";
+    $("write").hidden = false;
+    setTimeout(() => $("w-body").focus(), 30);
+  }
+  function closeWrite() { $("write").hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  $("write-close").onclick = closeWrite;
+  $("write").addEventListener("click", e => { if (e.target === $("write")) closeWrite(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("write").hidden) closeWrite(); });
+  $("fab").onclick = () => openWrite(S.view || ALL);
+
+  $("write-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const body = $("w-body").value.trim();
+    const to = $("w-to").value;
+    const anon = $("w-anon").checked;
+    const from = anon ? "익명" : ($("w-from").value.trim() || "익명");
+    const err = $("w-err");
+    if (!body) { err.textContent = "편지 내용을 적어주세요."; err.hidden = false; return; }
+    err.hidden = true;
+    if (!anon && from !== "익명") store.set(FROM_KEY, from);
+    const btn = $("w-send"); btn.disabled = true; btn.textContent = "넣는 중…";
+    try {
+      if (DEMO) DEMO_DATA.letters.push({ to, from, color: S.color, body, at: new Date().toISOString() });
+      else await post({ action: "send", to, from, body, color: S.color, website: $("w-web").value });
+      $("w-body").value = ""; $("w-cc").textContent = "0";
+      closeWrite();
+      const date = S.revealAt ? kst(S.revealAt, { month: "long", day: "numeric" }) : "여는 날";
+      toast(DEMO ? "미리보기라 저장되지는 않았어요. 실제로는 이렇게 쌓여요." : (S.revealed ? nameOf(to) + "에게 편지를 전했어요." : "우체통에 넣었어요. " + date + "에 " + nameOf(to) + "에게 전해져요."));
+      await load();
+      const box = document.querySelector('[data-box="' + CSS.escape(to) + '"]');
+      if (box) { box.classList.add("bump"); setTimeout(() => box.classList.remove("bump"), 600); }
+    } catch (x) {
+      err.textContent = x.message && /[가-힣]/.test(x.message) ? x.message : "편지를 넣지 못했어요. 잠시 뒤 다시 시도해주세요.";
+      err.hidden = false;
+    } finally { btn.disabled = false; btn.textContent = "우체통에 넣기"; }
+  });
+
+  /* ---------- 암호 ---------- */
+  function openGate(msg) {
+    $("gate").hidden = false;
+    $("gate-err").textContent = msg || ""; $("gate-err").hidden = !msg;
+    $("view").innerHTML = ""; $("fab").hidden = true; $("when").hidden = true;
+    setTimeout(() => $("gate-code").focus(), 30);
+  }
+  $("gate-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const c = $("gate-code").value.trim();
+    if (!c) return;
+    S.code = c; store.set(CODE_KEY, c);
+    $("gate-btn").disabled = true;
+    await load();
+    $("gate-btn").disabled = false;
+  });
+
+  $("demo-toggle").onclick = () => { S.demoOpen = !S.demoOpen; S.view = null; demoApply(); render(); };
+
+  /* ---------- 시작 ---------- */
+  if (DEMO) { load(); }
+  else {
+    S.code = store.get(CODE_KEY);
+    if (S.code) load(); else openGate("");
+    setInterval(() => { if (!document.hidden && S.code && $("write").hidden && !S.view) load(); }, 90000);
+  }
+})();
+</script>
+</body>
+</html>
