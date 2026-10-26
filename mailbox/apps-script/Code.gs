@@ -6,6 +6,9 @@
  * - 여는 날(REVEAL_AT) 전에는 몇 통인지만 웹사이트로 전달하고, 내용은 보내지 않습니다.
  * - 학생회 암호(PASSCODE)를 아는 사람만 들어올 수 있습니다.
  *
+ * - 편지 내용과 보낸 사람은 시트에 봉인(암호화)된 채로 저장됩니다.
+ *   시트를 열어도 'SEAL:…' 같은 알 수 없는 글자로 보이고, 여는 날 이후 웹사이트에서만 풀립니다.
+ *
  * ⚠ 아래 두 값은 Apps Script 편집기 안에서만 바꾸세요. GitHub에 올리면 누구나 암호를 볼 수 있어요.
  */
 const PASSCODE = '';                              // 학생회 암호. 예: 'inmun2026'
@@ -21,7 +24,8 @@ const MAX_SENDS_PER_10MIN = 60;
 function setup() {
   const ss = SpreadsheetApp.getActive();
   const lt = ss.getSheetByName(LETTERS) || ss.insertSheet(LETTERS);
-  lt.getRange(1, 1, 1, 6).setValues([['ID', '보낸 시각', '받는 사람', '보낸 사람', '내용', '편지지']]).setFontWeight('bold').setBackground('#ffe7e3');
+  lt.getRange(1, 1, 1, 6).setValues([['ID', '보낸 시각', '받는 사람', '보낸 사람 (봉인)', '내용 (봉인)', '편지지']]).setFontWeight('bold').setBackground('#ffe7e3');
+  key_();
   lt.setFrozenRows(1);
   lt.setColumnWidth(5, 420);
   lt.getRange(2, 2, 1000, 1).setNumberFormat('yyyy.MM.dd HH:mm');
@@ -54,19 +58,82 @@ function members_() {
     .filter(n => n && !seen[n] && (seen[n] = true));
 }
 
-function letters_() {
+/* ---------- 봉인 (시트에서 내용이 보이지 않게) ---------- */
+// 봉인 열쇠는 스크립트 속성에 자동으로 만들어 둡니다. 지우면 기존 편지를 풀 수 없으니 건드리지 마세요.
+function key_() {
+  const props = PropertiesService.getScriptProperties();
+  let k = props.getProperty('SEAL_KEY');
+  if (!k) { k = Utilities.getUuid() + Utilities.getUuid(); props.setProperty('SEAL_KEY', k); }
+  return k;
+}
+
+function xor_(bytes, nonce, key) {
+  const out = [];
+  let block = [];
+  for (let i = 0; i < bytes.length; i++) {
+    if (i % 32 === 0) block = Utilities.computeHmacSha256Signature(nonce + ':' + (i / 32), key);
+    out.push(((bytes[i] ^ block[i % 32]) << 24) >> 24);
+  }
+  return out;
+}
+
+function seal_(text) {
+  text = String(text == null ? '' : text);
+  if (!text) return '';
+  const nonce = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
+  const enc = xor_(Utilities.newBlob(text).getBytes(), nonce, key_());
+  return 'SEAL:' + nonce + ':' + Utilities.base64Encode(enc);
+}
+
+function open_(s) {
+  s = String(s == null ? '' : s);
+  if (s.indexOf('SEAL:') !== 0) return unsafe_(s);          // 봉인 전 기존 편지
+  const parts = s.split(':');
+  const dec = xor_(Utilities.base64Decode(parts[2]), parts[1], key_());
+  return Utilities.newBlob(dec).getDataAsString();
+}
+
+// 이 기능을 넣기 전에 들어온 편지를 봉인합니다. 한 번만 ▶ 실행하면 돼요.
+function sealExisting() {
+  const sh = SpreadsheetApp.getActive().getSheetByName(LETTERS);
+  if (!sh || sh.getLastRow() < 2) return '봉인할 편지가 없어요.';
+  const rng = sh.getRange(2, 4, sh.getLastRow() - 1, 2);
+  const v = rng.getValues();
+  let n = 0;
+  v.forEach(r => {
+    for (let j = 0; j < 2; j++) {
+      const cell = String(r[j]);
+      if (cell && cell.indexOf('SEAL:') !== 0) { r[j] = seal_(unsafe_(cell)); n++; }
+    }
+  });
+  rng.setValues(v);
+  sh.getRange(1, 4, 1, 2).setValues([['보낸 사람 (봉인)', '내용 (봉인)']]);
+  return n + '칸을 봉인했어요.';
+}
+
+// 여는 날 이후, 기념으로 시트에 원문을 풀어 남기고 싶을 때 ▶ 실행하세요. 여는 날 전에는 동작하지 않아요.
+function unsealAll() {
+  if (!revealed_()) throw new Error('아직 여는 날 전이라 풀 수 없어요.');
+  const sh = SpreadsheetApp.getActive().getSheetByName(LETTERS);
+  if (!sh || sh.getLastRow() < 2) return;
+  const rng = sh.getRange(2, 4, sh.getLastRow() - 1, 2);
+  rng.setValues(rng.getValues().map(r => [safe_(open_(r[0]), 20), safe_(open_(r[1]), 600)]));
+  sh.getRange(1, 4, 1, 2).setValues([['보낸 사람', '내용']]);
+}
+
+function letters_(withContent) {
   const sh = SpreadsheetApp.getActive().getSheetByName(LETTERS);
   if (!sh || sh.getLastRow() < 2) return [];
   return sh.getRange(2, 1, sh.getLastRow() - 1, 6).getValues()
     .filter(r => r[0])
-    .map(r => ({
+    .map(r => withContent ? {
       id: String(r[0]),
       at: r[1] instanceof Date ? r[1].toISOString() : String(r[1]),
       to: String(r[2]),
-      from: unsafe_(r[3]) || '익명',
-      body: unsafe_(r[4]),
+      from: open_(r[3]) || '익명',
+      body: open_(r[4]),
       color: COLORS.indexOf(String(r[5])) >= 0 ? String(r[5]) : 'butter',
-    }));
+    } : { to: String(r[2]) });
 }
 
 /* ---------- 우체통 열기 ---------- */
@@ -74,10 +141,10 @@ function doGet(e) {
   try {
     if (!checkCode_(e && e.parameter && e.parameter.code)) return json_({ ok: false, error: 'wrong_code' });
     const members = members_();
-    const all = letters_();
+    const open = revealed_();
+    const all = letters_(open);   // 여는 날 전에는 봉인을 풀지 않음
     const counts = {};
     all.forEach(l => { counts[l.to] = (counts[l.to] || 0) + 1; });
-    const open = revealed_();
     return json_({
       ok: true,
       members: members,
@@ -101,9 +168,9 @@ function doPost(e) {
 
   const to = String(b.to || '');
   if (to !== ALL && members_().indexOf(to) < 0) return json_({ ok: false, error: '받는 사람을 찾지 못했어요. 새로고침해주세요.' });
-  const body = safe_(b.body, 600);
+  const body = String(b.body == null ? '' : b.body).replace(/\r\n/g, '\n').trim().slice(0, 600);
   if (!body) return json_({ ok: false, error: '편지 내용을 적어주세요.' });
-  const from = safe_(b.from, 20) || '익명';
+  const from = String(b.from == null ? '' : b.from).trim().slice(0, 20) || '익명';
   const color = COLORS.indexOf(b.color) >= 0 ? b.color : 'butter';
 
   const lock = LockService.getScriptLock();
@@ -114,7 +181,7 @@ function doPost(e) {
     if (n >= MAX_SENDS_PER_10MIN) return json_({ ok: false, error: '지금은 편지가 너무 많이 들어왔어요. 10분 뒤에 다시 넣어주세요.' });
     cache.put('sends', String(n + 1), 600);
     const id = Utilities.getUuid().slice(0, 8);
-    SpreadsheetApp.getActive().getSheetByName(LETTERS).appendRow([id, new Date(), to, from, body, color]);
+    SpreadsheetApp.getActive().getSheetByName(LETTERS).appendRow([id, new Date(), to, seal_(from), seal_(body), color]);
     return json_({ ok: true, id: id });
   } finally {
     lock.releaseLock();
